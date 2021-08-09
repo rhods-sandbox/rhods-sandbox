@@ -1,0 +1,459 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: rhods-advanced-tier
+objects:
+
+#####################################################
+#  rhods-advanced
+
+- apiVersion: toolchain.dev.openshift.com/v1alpha1
+  kind: TierTemplate
+  metadata:
+    name: rhods-advanced-clusterresources-0
+    namespace: toolchain-host-operator
+  spec:
+    revision: '0'
+    tierName: rhods-advanced
+    type: clusterresources
+    template:
+      apiVersion: template.openshift.io/v1
+      kind: Template
+      metadata:
+        name: rhods-advanced-cluster-resources
+      objects:
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-compute
+          spec:
+            quota:
+              hard:
+                limits.cpu: 20000m
+                limits.memory: 20Gi
+                limits.ephemeral-storage: 10Gi
+                requests.cpu: 4000m
+                requests.memory: 20Gi
+                requests.storage: 20Gi
+                requests.ephemeral-storage: 10Gi
+                count/persistentvolumeclaims: "5"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-deployments
+          spec:
+            quota:
+              hard:
+                count/deployments.apps: "30"
+                count/deploymentconfigs.apps: "30"
+                count/pods: "50"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-replicas
+          spec:
+            quota:
+              hard:
+                count/replicasets.apps: "30"
+                count/replicationcontrollers: "30"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-routes
+          spec:
+            quota:
+              hard:
+                count/ingresses.extensions: "10"
+                count/routes.route.openshift.io: "10"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-jobs
+          spec:
+            quota:
+              hard:
+                count/jobs.batch: "30"
+                count/daemonsets.apps: "30"
+                count/cronjobs.batch: "30"
+                count/statefulsets.apps: "30"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-services
+          spec:
+            quota:
+              hard:
+                count/services: "10"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-bc
+          spec:
+            quota:
+              hard:
+                count/buildconfigs.build.openshift.io: "30"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-secrets
+          spec:
+            quota:
+              hard:
+                count/secrets: "100"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+        - apiVersion: quota.openshift.io/v1
+          kind: ClusterResourceQuota
+          metadata:
+            name: for-${USERNAME}-cm
+          spec:
+            quota:
+              hard:
+                count/configmaps: "100"
+            selector:
+              annotations:
+                openshift.io/requester: ${USERNAME}
+              labels: null
+      parameters:
+        - name: USERNAME
+          required: true
+
+
+- apiVersion: toolchain.dev.openshift.com/v1alpha1
+  kind: TierTemplate
+  metadata:
+    name: rhods-advanced-dev-0
+    namespace: toolchain-host-operator
+  spec:
+    revision: '0'
+    tierName: rhods-advanced
+    type: dev
+    template:
+      apiVersion: template.openshift.io/v1
+      kind: Template
+      metadata:
+        name: rhods-advanced-dev
+      objects:
+        - apiVersion: v1
+          kind: Namespace
+          metadata:
+            annotations:
+              openshift.io/description: ${USERNAME}-dev
+              openshift.io/display-name: ${USERNAME}-dev
+              openshift.io/requester: ${USERNAME}
+            labels:
+              name: ${USERNAME}-dev
+            name: ${USERNAME}-dev
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: rbac-edit
+            namespace: ${USERNAME}-dev
+          rules:
+            - apiGroups:
+                - authorization.openshift.io
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: user-rbac-edit
+            namespace: ${USERNAME}-dev
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: rbac-edit
+          subjects:
+            - kind: User
+              name: ${USERNAME}
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: user-edit
+            namespace: ${USERNAME}-dev
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: edit
+          subjects:
+            - kind: User
+              name: ${USERNAME}
+        - apiVersion: v1
+          kind: LimitRange
+          metadata:
+            name: resource-limits
+            namespace: ${USERNAME}-dev
+          spec:
+            limits:
+              - type: "Container"
+                default:
+                  cpu: 2000m
+                  memory: 10000Mi
+                defaultRequest:
+                  cpu: 300m
+                  memory: 4000Mi
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-same-namespace
+            namespace: ${USERNAME}-dev
+          spec:
+            podSelector: { }
+            ingress:
+              - from:
+                  - podSelector: { }
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-from-openshift-ingress
+            namespace: ${USERNAME}-dev
+          spec:
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        network.openshift.io/policy-group: ingress
+            podSelector: { }
+            policyTypes:
+              - Ingress
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-from-openshift-monitoring
+            namespace: ${USERNAME}-dev
+          spec:
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        network.openshift.io/policy-group: monitoring
+            podSelector: { }
+            policyTypes:
+              - Ingress
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-from-other-user-namespaces
+            namespace: ${USERNAME}-dev
+          spec:
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        name: ${USERNAME}-stage
+            podSelector: { }
+            policyTypes:
+              - Ingress
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-from-codeready-workspaces-operator
+            namespace: ${USERNAME}-dev
+          spec:
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        network.openshift.io/policy-group: codeready-workspaces
+            podSelector: { }
+            policyTypes:
+              - Ingress
+      parameters:
+        - name: USERNAME
+          required: true
+
+- apiVersion: toolchain.dev.openshift.com/v1alpha1
+  kind: TierTemplate
+  metadata:
+    name: rhods-advanced-stage-0
+    namespace: toolchain-host-operator
+  spec:
+    revision: '0'
+    tierName: rhods-advanced
+    type: stage
+    template:
+      apiVersion: template.openshift.io/v1
+      kind: Template
+      metadata:
+        name: base-stage
+      objects:
+        - apiVersion: v1
+          kind: Namespace
+          metadata:
+            annotations:
+              openshift.io/description: ${USERNAME}-stage
+              openshift.io/display-name: ${USERNAME}-stage
+              openshift.io/requester: ${USERNAME}
+            labels:
+              name: ${USERNAME}-stage
+            name: ${USERNAME}-stage
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: Role
+          metadata:
+            name: rbac-edit
+            namespace: ${USERNAME}-stage
+          rules:
+            - apiGroups:
+                - authorization.openshift.io
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - patch
+                - delete
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: user-rbac-edit
+            namespace: ${USERNAME}-stage
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: rbac-edit
+          subjects:
+            - kind: User
+              name: ${USERNAME}
+        - apiVersion: rbac.authorization.k8s.io/v1
+          kind: RoleBinding
+          metadata:
+            name: user-edit
+            namespace: ${USERNAME}-stage
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: edit
+          subjects:
+            - kind: User
+              name: ${USERNAME}
+        - apiVersion: v1
+          kind: LimitRange
+          metadata:
+            name: resource-limits
+            namespace: ${USERNAME}-stage
+          spec:
+            limits:
+              - type: "Container"
+                default:
+                  cpu: 2000m
+                  memory: 10000Mi
+                defaultRequest:
+                  cpu: 300m
+                  memory: 4000Mi
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-same-namespace
+            namespace: ${USERNAME}-stage
+          spec:
+            podSelector: { }
+            ingress:
+              - from:
+                  - podSelector: { }
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-from-openshift-ingress
+            namespace: ${USERNAME}-stage
+          spec:
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        network.openshift.io/policy-group: ingress
+            podSelector: { }
+            policyTypes:
+              - Ingress
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-from-openshift-monitoring
+            namespace: ${USERNAME}-stage
+          spec:
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        network.openshift.io/policy-group: monitoring
+            podSelector: { }
+            policyTypes:
+              - Ingress
+        - apiVersion: networking.k8s.io/v1
+          kind: NetworkPolicy
+          metadata:
+            name: allow-from-other-user-namespaces
+            namespace: ${USERNAME}-stage
+          spec:
+            ingress:
+              - from:
+                  - namespaceSelector:
+                      matchLabels:
+                        name: ${USERNAME}-dev
+            podSelector: { }
+            policyTypes:
+              - Ingress
+      parameters:
+        - name: USERNAME
+          required: true
+
+
+- apiVersion: toolchain.dev.openshift.com/v1alpha1
+  kind: NSTemplateTier
+  metadata:
+    name: rhods-advanced
+  spec:
+    clusterResources:
+      templateRef: rhods-advanced-clusterresources-0
+    namespaces:
+      - templateRef: rhods-advanced-dev-0
+      - templateRef: rhods-advanced-stage-0
+
+#####################################################
+
+parameters: []
+

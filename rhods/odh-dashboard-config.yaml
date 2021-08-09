@@ -1,0 +1,16 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: rhods-config
+objects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: odh-dashboard-config
+    type: Opaque
+    data:
+      disableInfo: 'true'
+      enablement: 'false'
+parameters: []
+
+

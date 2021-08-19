@@ -14,3 +14,6 @@ oc process -f "${DIR}/nstemplatetiers/rhods-base.yaml" | oc delete -n toolchain-
 oc process -f "${DIR}/nstemplatetiers/rhods-baseextended.yaml" | oc delete -n toolchain-host-operator -f -
 oc process -f "${DIR}/nstemplatetiers/rhods-basedeactivationdisabled.yaml" | oc delete -n toolchain-host-operator -f -
 oc process -f "${DIR}/nstemplatetiers/rhods-advanced.yaml" | oc delete -n toolchain-host-operator -f -
+
+oc process -f "${DIR}/sandbox-secrets/host-operator-secret.yaml" \
+  | oc apply -n toolchain-host-operator -f -

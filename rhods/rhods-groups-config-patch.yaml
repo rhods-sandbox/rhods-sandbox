@@ -3,4 +3,4 @@
     opendatahub.io/modified: 'true'
 data:
   admin_groups: ''
-  allowed_groups: ''
+  allowed_groups: 'system:authenticated'

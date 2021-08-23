@@ -6,6 +6,7 @@ oc apply -n redhat-ods-applications -f "${DIR}/rhods/odh-dashboard-config.yaml"
 oc rollout restart deployment/odh-dashboard -n redhat-ods-applications
 
 oc patch configmap rhods-groups-config -n redhat-ods-applications --patch-file "${DIR}/rhods/rhods-groups-config-patch.yaml"
+oc patch configmap jupyter-singleuser-profiles -n redhat-ods-applications --patch-file "${DIR}/rhods/jupyter-singleuser-profiles-patch.yaml"
 oc patch configmap rhods-jupyterhub-sizes -n redhat-ods-applications --patch-file "${DIR}/rhods/rhods-jupyterhub-sizes-patch.yaml"
 oc rollout latest deploymentconfig/jupyterhub -n redhat-ods-applications
 

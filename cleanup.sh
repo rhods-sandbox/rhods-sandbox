@@ -6,8 +6,8 @@ oc delete configmap odh-dashboard-config -n redhat-ods-applications
 oc rollout restart deployment/odh-dashboard -n redhat-ods-applications
 
 oc patch configmap rhods-groups-config -n redhat-ods-applications --patch-file "${DIR}/rhods/rhods-groups-config-original-patch.yaml"
-oc patch configmap odh-jupyterhub-sizes -n redhat-ods-applications --patch-file "${DIR}/rhods/odh-jupyterhub-sizes-original-patch.yaml"
-oc rollout latest deploymentconfig/jupyterhub-db -n redhat-ods-applications
+oc patch configmap jupyter-singleuser-profiles -n redhat-ods-applications --patch-file "${DIR}/rhods/jupyter-singleuser-profiles-original-patch.yaml"
+oc patch configmap rhods-jupyterhub-sizes -n redhat-ods-applications --patch-file "${DIR}/rhods/rhods-jupyterhub-sizes-original-patch.yaml"
 oc rollout latest deploymentconfig/jupyterhub -n redhat-ods-applications
 
 oc process -f "${DIR}/nstemplatetiers/rhods-base.yaml" | oc delete -n toolchain-host-operator -f -

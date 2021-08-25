@@ -1,0 +1,40 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: jupyterhub-idle-culler
+parameters:
+  - name: IDLE_CULLER_TIMEOUT
+    value: '86400'
+objects:
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      name: jupyterhub-idle-culler
+    spec:
+      selector:
+        app: jupyterhub-idle-culler
+      replicas: 1
+      template:
+        metadata:
+          labels:
+            app: jupyterhub-idle-culler
+        spec:
+          containers:
+            - name: jupyterhub-idle-culler
+              image: quay.io/odh-jupyterhub/jupyterhub-img:v0.3.3
+              env:
+                - name: JUPYTERHUB_API_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: jupyterhub-idle-culler
+                      key: token
+              command:
+                - jupyterhub-idle-culler
+                - --timeout=${IDLE_CULLER_TIMEOUT}  # 3 days
+                - --url=jupyterhub:8081/hub/api
+      triggers:
+        - type: ConfigChange
+
+
+
+

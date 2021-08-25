@@ -2,6 +2,8 @@ echo "Make sure you are logged in as kubeadmin"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+oc process -n redhat-ods-applications -f "${DIR}/rhods/jupyterhub-idle-culler.yaml" | oc delete -f -
+
 oc delete configmap odh-dashboard-config -n redhat-ods-applications
 oc rollout restart deployment/odh-dashboard -n redhat-ods-applications
 

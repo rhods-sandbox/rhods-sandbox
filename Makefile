@@ -14,13 +14,36 @@ endif
 ##################################
 
 .PHONY: setup
-setup:
-	./setup.sh
+setup: setup-rhods setup-sandbox
+
+
+##################################
+
+.PHONY: setup-rhods
+setup-rhods:
+	./setup-rhods.sh
+
+##################################
+
+.PHONY: setup-sandbox
+setup-sandbox:
+	./setup-sandbox.sh
 
 ##################################
 
 .PHONY: cleanup
-cleanup:
-	./cleanup.sh
+cleanup: cleanup-rhods cleanup-sandbox
+
+##################################
+
+.PHONY: cleanup-rhods
+cleanup-rhods:
+	./cleanup-rhods.sh
+
+##################################
+
+.PHONY: cleanup-sandbox
+cleanup-sandbox:
+	./cleanup-sandbox.sh
 
 ##################################

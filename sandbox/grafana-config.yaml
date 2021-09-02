@@ -1,0 +1,50 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: grafana-proxy-config-secret
+objects:
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: grafana-proxy-config
+    namespace: openshift-customer-monitoring
+    labels:
+      provider: sandbox-sre
+  type: Opaque
+  stringData:
+    client-id: ${GRAFANA_GITHUB_CLIENT_ID}
+    client-secret: ${GRAFANA_GITHUB_CLIENT_SECRET}
+    cookie-secret: ${GRAFANA_GITHUB_COOKIE_SECRET}
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    name: openshift-customer-monitoring-read-only
+  rules:
+    - apiGroups:
+        - '*'
+      resources:
+        - '*'
+      verbs:
+        - get
+        - watch
+        - list
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: grafana-openshift-customer-monitoring-read-only
+  subjects:
+    - kind: ServiceAccount
+      name: grafana
+      namespace: openshift-customer-monitoring
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: openshift-customer-monitoring-read-only
+parameters:
+  - name: GRAFANA_GITHUB_CLIENT_ID
+    value: dummy
+  - name: GRAFANA_GITHUB_CLIENT_SECRET
+    value: dummy
+  - name: GRAFANA_GITHUB_COOKIE_SECRET
+    value: dummy
+

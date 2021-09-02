@@ -9,7 +9,7 @@ oc process -f "${DIR}/sandbox/nstemplatetiers/rhods-baseextended.yaml" | oc appl
 oc process -f "${DIR}/sandbox/nstemplatetiers/rhods-basedeactivationdisabled.yaml" | oc apply -n toolchain-host-operator -f -
 oc process -f "${DIR}/sandbox/nstemplatetiers/rhods-advanced.yaml" | oc apply -n toolchain-host-operator -f -
 
-oc process -f "${DIR}/sandbox/host-operator-secret.yaml" \
+oc process -f "${DIR}/sandbox/host-operator-config.yaml" \
   -p MAILGUN_API_KEY="${MAILGUN_API_KEY}" \
   -p MAILGUN_DOMAIN="${MAILGUN_DOMAIN}" \
   -p MAILGUN_SENDER_EMAIL="${MAILGUN_SENDER_EMAIL}" \
@@ -21,3 +21,20 @@ oc process -f "${DIR}/sandbox/host-operator-secret.yaml" \
 
 oc rollout restart deployment/registration-service -n toolchain-host-operator
 oc rollout restart deployment/host-operator-controller-manager -n toolchain-host-operator
+
+oc process -f "${DIR}/sandbox/prometheus-config.yaml" \
+  -p PROMETHEUS_GITHUB_CLIENT_ID="${PROMETHEUS_GITHUB_CLIENT_ID}" \
+  -p PROMETHEUS_GITHUB_CLIENT_SECRET="${PROMETHEUS_GITHUB_CLIENT_SECRET}" \
+  -p PROMETHEUS_GITHUB_COOKIE_SECRET="${PROMETHEUS_GITHUB_COOKIE_SECRET}" \
+  | oc apply -n openshift-customer-monitoring -f -
+oc scale statefulset/prometheus-prometheus --replicas=0 -n openshift-customer-monitoring
+oc scale statefulset/prometheus-prometheus --replicas=2 -n openshift-customer-monitoring
+
+oc process -f "${DIR}/sandbox/grafana-config.yaml" \
+  -p GRAFANA_GITHUB_CLIENT_ID="${GRAFANA_GITHUB_CLIENT_ID}" \
+  -p GRAFANA_GITHUB_CLIENT_SECRET="${GRAFANA_GITHUB_CLIENT_SECRET}" \
+  -p GRAFANA_GITHUB_COOKIE_SECRET="${GRAFANA_GITHUB_COOKIE_SECRET}" \
+  | oc apply -n openshift-customer-monitoring -f -
+oc rollout restart deployment/grafana -n openshift-customer-monitoring
+
+

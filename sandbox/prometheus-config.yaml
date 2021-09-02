@@ -1,0 +1,26 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: prometheus-proxy-config-secret
+objects:
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: prometheus-proxy-config
+    namespace: openshift-customer-monitoring
+    labels:
+      provider: sandbox-sre
+  type: Opaque
+  stringData:
+    client-id: ${PROMETHEUS_GITHUB_CLIENT_ID}
+    client-secret: ${PROMETHEUS_GITHUB_CLIENT_SECRET}
+    cookie-secret: ${PROMETHEUS_GITHUB_COOKIE_SECRET}
+
+parameters:
+  - name: PROMETHEUS_GITHUB_CLIENT_ID
+    value: dummy
+  - name: PROMETHEUS_GITHUB_CLIENT_SECRET
+    value: dummy
+  - name: PROMETHEUS_GITHUB_COOKIE_SECRET
+    value: dummy
+

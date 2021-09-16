@@ -1,6 +1,14 @@
 data:
   jupyterhub-singleuser-profiles.yaml: |
     sizes:
+    - name: Default
+      resources:
+        requests:
+          memory: 8Gi
+          cpu: 1
+        limits:
+          memory: 8Gi
+          cpu: 2
     - name: Small
       resources:
         requests:

@@ -1,0 +1,11 @@
+data:
+  jupyterhub-singleuser-profiles.yaml: |
+    profiles:
+      - name: globals
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 1
+          limits:
+            memory: 8Gi
+            cpu: 2

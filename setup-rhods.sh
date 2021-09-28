@@ -14,5 +14,6 @@ oc rollout restart deployment/rhods-dashboard -n redhat-ods-applications
 oc adm groups new rhods-admins || echo "rhods-admins group already exists"
 oc patch configmap rhods-groups-config -n redhat-ods-applications --patch-file "${DIR}/rhods/rhods-groups-config-patch.yaml"
 oc patch configmap rhods-jupyterhub-sizes -n redhat-ods-applications --patch-file "${DIR}/rhods/rhods-jupyterhub-sizes-patch.yaml"
+oc patch configmap odh-jupyterhub-global-profile -n redhat-ods-applications --patch-file "${DIR}/rhods/odh-jupyterhub-global-profile-patch.yaml"
 oc rollout latest deploymentconfig/jupyterhub -n redhat-ods-applications
 

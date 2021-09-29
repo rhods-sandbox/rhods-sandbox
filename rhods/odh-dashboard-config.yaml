@@ -6,6 +6,7 @@ data:
   disableInfo: 'true'
   enablement: 'false'
   disableSupport: 'true'
+  disableClusterManager: 'true'
 
 
 

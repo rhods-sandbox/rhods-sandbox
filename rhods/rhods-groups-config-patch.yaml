@@ -2,5 +2,5 @@
   labels:
     opendatahub.io/modified: 'true'
 data:
-  admin_groups: 'rhods-admins'
+  admin_groups: 'cluster-admins'
   allowed_groups: 'system:authenticated'

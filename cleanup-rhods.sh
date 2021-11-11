@@ -14,3 +14,4 @@ oc patch configmap rhods-jupyterhub-sizes -n redhat-ods-applications --patch-fil
 oc patch configmap odh-jupyterhub-global-profile -n redhat-ods-applications --patch-file "${DIR}/rhods/odh-jupyterhub-global-profile-original-patch.yaml"
 oc rollout latest deploymentconfig/jupyterhub -n redhat-ods-applications
 
+oc delete -f "${DIR}/rhods/cleanup-sandbox-user.cronjob.yaml"

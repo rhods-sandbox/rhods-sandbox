@@ -115,7 +115,7 @@ spec:
 
                   for JUPYTERHUB_USERNAME in ${JUPYTERHUB_USER_LIST};
                   do
-                    if [[ ${JUPYTERHUB_USERNAME} -eq "admin" ]];
+                    if [[ ${JUPYTERHUB_USERNAME} = "admin" ]];
                     then
                       continue;
                     fi

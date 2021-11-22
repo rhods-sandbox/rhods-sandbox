@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: cleanup-sandbox-user-artifacts
+  namespace: redhat-ods-applications
 ---
 # Allow the cleanup job to check if an OCP user exists and delete PVCs and ConfigMaps
 apiVersion: rbac.authorization.k8s.io/v1
@@ -132,6 +133,10 @@ spec:
                       curl -s -k -X DELETE -H "Authorization: token ${JUPYTERHUB_API_TOKEN}" ${JUPYTERHUB_API_URL}/users/${JUPYTERHUB_USERNAME} > /dev/null
 
                       oc delete -n ${JUPYTERHUB_APPLICATION_NAMESPACE} cm jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}
+
+                      oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} cm jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}-envs
+
+                      oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} secret jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}-envs
 
                       oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} pvc jupyterhub-nb-${JUPYTERHUB_USERNAME_TRANSLATED}-pvc
                     else

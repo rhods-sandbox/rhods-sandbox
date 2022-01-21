@@ -1,44 +1,15 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: cleanup-sandbox-user-artifacts
+  name: rhods-cleanup
   namespace: redhat-ods-applications
 ---
-# Allow the cleanup job to check if an OCP user exists and delete PVCs and ConfigMaps
+# Allow the cleanup job to check if an OCP user exists
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: cleanup-sandbox-user-artifacts
+  name: rhods-query-users
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - endpoints
-      - persistentvolumeclaims
-      - pods
-      - secrets
-      - services
-    verbs:
-      - create
-      - delete
-      - deletecollection
-      - patch
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-      - endpoints
-      - events
-      - persistentvolumeclaims
-      - pods
-      - secrets
-      - services
-    verbs:
-      - get
-      - list
-      - watch
   - apiGroups:
       - ""
       - user.openshift.io
@@ -55,20 +26,50 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: cleanup-sandbox-user-artifacts
+  name: rhods-query-users
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cleanup-sandbox-user-artifacts
+  name: rhods-query-users
 subjects:
   - kind: ServiceAccount
-    name: cleanup-sandbox-user-artifacts
+    name: rhods-cleanup
+    namespace: redhat-ods-applications
+---
+# Allow the cleanup job delete resources in the rhods-notebooks namespace
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rhods-notebooks-cleanup
+  namespace: rhods-notebooks
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+  - kind: ServiceAccount
+    name: rhods-cleanup
+    namespace: redhat-ods-applications
+---
+# Allow the cleanup job delete resources in the redhat-ods-applications namespace
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rhods-applications-cleanup
+  namespace: redhat-ods-applications
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+  - kind: ServiceAccount
+    name: rhods-cleanup
     namespace: redhat-ods-applications
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cleanup-sandbox-user-artifacts
+  name: rhods-cleanup
   namespace: redhat-ods-applications
 spec:
   schedule: '0 * * * *'
@@ -82,9 +83,9 @@ spec:
       template:
         spec:
           containers:
-            - name: cleanup-sandbox-user-artifacts
+            - name: rhods-cleanup
               # Custom image to provide oc cli and jq
-              image: quay.io/llasmith/rhods-sandbox:latest
+              image: quay.io/modh/rhods-cleanup:latest
               env:
                 - name: JUPYTERHUB_API_TOKEN
                   valueFrom:
@@ -97,52 +98,7 @@ spec:
                   value: http://jupyterhub:8081/hub/api
                 - name: JUPYTERHUB_APPLICATION_NAMESPACE
                   value: redhat-ods-applications
-
-              # This script will query all of the JH users to see if they have an existing OCP user
-              #   If no OCP user exists then:
-              #     - Stop the notebook server
-              #     - Remove the user's entry in JupyterHub
-              #     - Delete the user's singleuserprofile ConfigMap
-              #     - Delete the user's PVC
-              args:
-                - /bin/sh
-                - '-c'
-                - >
-                  echo "JupyterHub API token: ${JUPYTERHUB_API_TOKEN}";
-
-                  JUPYTERHUB_USER_LIST=$(curl -s -k -X GET -H "Authorization: token ${JUPYTERHUB_API_TOKEN}" ${JUPYTERHUB_API_URL}/users | jq -r '.[].name')
-
-                  echo "JupyterHub users: ${JUPYTERHUB_USER_LIST}"
-
-                  for JUPYTERHUB_USERNAME in ${JUPYTERHUB_USER_LIST};
-                  do
-                    if [[ ${JUPYTERHUB_USERNAME} = "admin" ]];
-                    then
-                      continue;
-                    fi
-
-                    oc get user ${JUPYTERHUB_USERNAME} > /dev/null
-
-                    if [[ $? != 0 ]];
-                    then
-                      echo "OCP user (${JUPYTERHUB_USERNAME}) NOT FOUND. Cleaning up artifacts"
-                      JUPYTERHUB_USERNAME_TRANSLATED=$(echo ${JUPYTERHUB_USERNAME} | sed 's/-/-2d/g' | sed 's/@/-40/g' | sed 's/\./-2e/g')
-
-                      curl -s -k -X DELETE -H "Authorization: token ${JUPYTERHUB_API_TOKEN}" ${JUPYTERHUB_API_URL}/users/${JUPYTERHUB_USERNAME}/server > /dev/null
-
-                      curl -s -k -X DELETE -H "Authorization: token ${JUPYTERHUB_API_TOKEN}" ${JUPYTERHUB_API_URL}/users/${JUPYTERHUB_USERNAME} > /dev/null
-
-                      oc delete -n ${JUPYTERHUB_APPLICATION_NAMESPACE} cm jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}
-
-                      oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} cm jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}-envs
-
-                      oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} secret jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}-envs
-
-                      oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} pvc jupyterhub-nb-${JUPYTERHUB_USERNAME_TRANSLATED}-pvc
-                    else
-                      echo "SKIPPING user: ${JUPYTERHUB_USERNAME}";
-                    fi
-                  done
-          serviceAccount: cleanup-sandbox-user-artifacts
-          serviceAccountName: cleanup-sandbox-user-artifacts
+              command: ["cleanup.sh"]
+          serviceAccount: rhods-cleanup
+          serviceAccountName: rhods-cleanup
           restartPolicy: Never

@@ -14,7 +14,7 @@ endif
 ##################################
 
 .PHONY: setup
-setup: setup-rhods setup-sandbox
+setup: setup-rhods setup-intel setup-sandbox
 
 
 ##################################
@@ -25,6 +25,12 @@ setup-rhods:
 
 ##################################
 
+.PHONY: setup-intel
+setup-intel:
+	./setup-intel.sh
+
+##################################
+
 .PHONY: setup-sandbox
 setup-sandbox:
 	./setup-sandbox.sh
@@ -32,7 +38,13 @@ setup-sandbox:
 ##################################
 
 .PHONY: cleanup
-cleanup: cleanup-rhods cleanup-sandbox
+cleanup: cleanup-intel cleanup-rhods cleanup-sandbox
+
+##################################
+
+.PHONY: cleanup-intel
+cleanup-intel:
+	./cleanup-intel.sh
 
 ##################################
 

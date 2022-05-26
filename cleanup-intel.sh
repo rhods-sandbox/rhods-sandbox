@@ -4,7 +4,7 @@ echo "Make sure you are logged in as cluster admin"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-OPENVINO_NOTEBOOK=$(oc get Notebook -n redhat-ods-applications -o name)
+OPENVINO_NOTEBOOK=$(oc get notebook.intel.com -n redhat-ods-applications -o name)
 echo "deleting Openvino Notebook resource"
 oc delete $OPENVINO_NOTEBOOK -n redhat-ods-applications
 

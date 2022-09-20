@@ -1,45 +1,38 @@
 #!/usr/bin/env bash
 
-# This script will query all of the JH users to see if they have an existing OCP user
+# This script will query all of the notebooks and make sure there user still exists
 #   If no OCP user exists then:
-#     - Stop the notebook server
-#     - Remove the user's entry in JupyterHub
+#     - Delete the notebook resource
 #     - Delete the user's singleuserprofile ConfigMap
 #     - Delete the user's singleuserprofile Secret
 #     - Delete the user's PVC
 
-echo "JupyterHub API token: ${JUPYTERHUB_API_TOKEN}";
+echo "RHODS_NOTEBOOKS_NAMESPACE namespace set to ${RHODS_NOTEBOOKS_NAMESPACE}"
 
-JUPYTERHUB_USER_LIST=$(curl -s -k -X GET -H "Authorization: token ${JUPYTERHUB_API_TOKEN}" ${JUPYTERHUB_API_URL}/users | jq -r '.[].name')
+NOTEBOOKS=$(oc get notebook.kubeflow.org -n "${RHODS_NOTEBOOKS_NAMESPACE}" -o name)
 
-echo "JupyterHub users: ${JUPYTERHUB_USER_LIST}"
-
-for JUPYTERHUB_USERNAME in ${JUPYTERHUB_USER_LIST};
+for NOTEBOOK in ${NOTEBOOKS};
 do
-  if [[ ${JUPYTERHUB_USERNAME} = "admin" || ${JUPYTERHUB_USERNAME} = "kube:admin" ]];
-  then
-    continue;
-  fi
+  echo " checking ${NOTEBOOK} user still exists"
+  TRANSLATED_USERNAME=$(echo ${NOTEBOOK} | sed 's|notebook.kubeflow.org/jupyter-nb-||g')
+  OCP_USERNAME=$(echo ${TRANSLATED_USERNAME} | sed 's/-2d/-/g' | sed 's/-40/@/g' | sed 's/-2e/\./g'| sed 's/-3a/:/g')
+  echo " ${OCP_USERNAME}"
 
-  oc get user ${JUPYTERHUB_USERNAME} > /dev/null
+  oc get user ${OCP_USERNAME} > /dev/null
 
   if [[ $? != 0 ]];
   then
-    echo "OCP user (${JUPYTERHUB_USERNAME}) NOT FOUND. Cleaning up artifacts"
-    JUPYTERHUB_USERNAME_TRANSLATED=$(echo ${JUPYTERHUB_USERNAME} | sed 's/-/-2d/g' | sed 's/@/-40/g' | sed 's/\./-2e/g'| sed 's/:/-3a/g')
+    echo "OCP user (${OCP_USERNAME}) NOT FOUND. Cleaning up artifacts"
 
-    curl -s -k -X DELETE -H "Authorization: token ${JUPYTERHUB_API_TOKEN}" ${JUPYTERHUB_API_URL}/users/${JUPYTERHUB_USERNAME}/server > /dev/null
+    oc delete -n ${RHODS_NOTEBOOKS_NAMESPACE} notebooks.kubeflow.org jupyter-nb-${TRANSLATED_USERNAME}
 
-    curl -s -k -X DELETE -H "Authorization: token ${JUPYTERHUB_API_TOKEN}" ${JUPYTERHUB_API_URL}/users/${JUPYTERHUB_USERNAME} > /dev/null
+    oc delete -n ${RHODS_NOTEBOOKS_NAMESPACE} cm jupyterhub-singleuser-profile-${TRANSLATED_USERNAME}-envs
 
-    oc delete -n ${JUPYTERHUB_APPLICATION_NAMESPACE} cm jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}
+    oc delete -n ${RHODS_NOTEBOOKS_NAMESPACE} secret jupyterhub-singleuser-profile-${TRANSLATED_USERNAME}-envs
 
-    oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} cm jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}-envs
-
-    oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} secret jupyterhub-singleuser-profile-${JUPYTERHUB_USERNAME_TRANSLATED}-envs
-
-    oc delete -n ${JUPYTERHUB_NOTEBOOK_NAMESPACE} pvc jupyterhub-nb-${JUPYTERHUB_USERNAME_TRANSLATED}-pvc
+    oc delete -n ${RHODS_NOTEBOOKS_NAMESPACE} pvc jupyterhub-nb-${TRANSLATED_USERNAME}-pvc
   else
-    echo "SKIPPING user: ${JUPYTERHUB_USERNAME}";
+    echo "SKIPPING user: ${OCP_USERNAME}";
   fi
 done
+

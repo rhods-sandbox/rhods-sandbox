@@ -1,12 +1,42 @@
-apiVersion: v1
-kind: ConfigMap
+apiVersion: opendatahub.io/v1alpha
+kind: OdhDashboardConfig
 metadata:
   name: odh-dashboard-config
-data:
-  disableInfo: 'true'
-  enablement: 'false'
-  disableSupport: 'true'
-  disableClusterManager: 'true'
-
-
-
+  namespace: redhat-ods-applications
+spec:
+  dashboardConfig:
+    disableBYONImageStream: false
+    disableClusterManager: true
+    disableISVBadges: false
+    disableInfo: true
+    disableSupport: true
+    disableTracking: false
+    disableUserManagement: false
+    enablement: false
+  groupsConfig:
+    adminGroups: 'cluster-admins,dedicated-admins,rhods-admins'
+    allowedGroups: 'system:authenticated'
+  notebookController:
+    enabled: true
+    notebookNamespace: rhods-notebooks
+    notebookTolerationSettings:
+      enabled: true
+      key: NotebooksOnly
+    pvcSize: 20Gi
+  notebookSizes:
+    - name: Default
+      resources:
+        requests:
+          memory: 8Gi
+          cpu: "1"
+        limits:
+          memory: 8Gi
+          cpu: "2"
+    - name: Small
+      resources:
+        requests:
+          memory: 8Gi
+          cpu: "1"
+        limits:
+          memory: 8Gi
+          cpu: "2"

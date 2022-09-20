@@ -1,6 +1,0 @@
-﻿metadata:
-  labels:
-    opendatahub.io/modified: 'true'
-data:
-  admin_groups: 'rhods-admins'
-  allowed_groups: 'system:authenticated'

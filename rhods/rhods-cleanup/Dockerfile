@@ -1,5 +1,5 @@
 # This image is just to allow the use of jq to parse the oc cli json output
-FROM registry.redhat.io/openshift4/ose-cli:v4.9
+FROM registry.redhat.io/openshift4/ose-cli:v4.11
 
 RUN yum install -y --quiet \
     jq \

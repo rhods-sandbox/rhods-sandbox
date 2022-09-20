@@ -85,19 +85,10 @@ spec:
           containers:
             - name: rhods-cleanup
               # Custom image to provide oc cli and jq
-              image: quay.io/modh/rhods-cleanup:latest
+              image: quay.io/modh/rhods-cleanup:1.16
               env:
-                - name: JUPYTERHUB_API_TOKEN
-                  valueFrom:
-                    secretKeyRef:
-                      name: jupyterhub-idle-culler
-                      key: token
-                - name: JUPYTERHUB_NOTEBOOK_NAMESPACE
+                - name: RHODS_NOTEBOOKS_NAMESPACE
                   value: rhods-notebooks
-                - name: JUPYTERHUB_API_URL
-                  value: http://jupyterhub:8081/hub/api
-                - name: JUPYTERHUB_APPLICATION_NAMESPACE
-                  value: redhat-ods-applications
               command: ["cleanup.sh"]
           serviceAccount: rhods-cleanup
           serviceAccountName: rhods-cleanup
